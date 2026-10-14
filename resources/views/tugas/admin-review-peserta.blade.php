@@ -1,0 +1,133 @@
+@extends('layouts.admin')
+
+@section('title', 'Penilaian Peserta')
+@section('page-title', 'Form Persetujuan & Penilaian Asesor')
+
+@section('content')
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+    <div style="border-bottom: 2px solid #f3e4e4; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <h2 style="margin: 0; color: #800020;">Penilaian Hasil Uji Kompetensi</h2>
+            <p style="margin: 5px 0 0; color: #666;">Keputusan kelulusan unjuk kerja: Kompeten (K) atau Belum Kompeten (BK).</p>
+        </div>
+        <div>
+            <a href="{{ route('admin.tugas.penilaian', $tugas->id) }}" style="padding: 8px 14px; background: #e0e0e0; color: #333; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px;">
+                ← Kembali ke Daftar Peserta
+            </a>
+        </div>
+    </div>
+
+    @if ($errors->any())
+        <div class="alert-error">
+            <ul style="margin: 0; padding-left: 20px;">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    {{-- Detail Peserta & Skema --}}
+    <div style="background: #faf7f7; border: 1px solid #eadada; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+        <h3 style="margin-top: 0; color: #800020; font-size: 16px;">Data Peserta & Tugas Skema</h3>
+        <table width="100%" cellpadding="6" style="font-size: 14px;">
+            <tr>
+                <td width="25%" style="color: #666;">Nama Peserta</td>
+                <td><strong>{{ $peserta->nama }}</strong></td>
+            </tr>
+            <tr>
+                <td style="color: #666;">NIK</td>
+                <td>{{ $peserta->nik }}</td>
+            </tr>
+            <tr>
+                <td style="color: #666;">Skema Sertifikasi</td>
+                <td>{{ $tugas->skema->kode_skema }} - {{ $tugas->skema->nama_skema }}</td>
+            </tr>
+            <tr>
+                <td style="color: #666;">Judul Tugas</td>
+                <td><strong>{{ $tugas->judul }}</strong></td>
+            </tr>
+            <tr>
+                <td style="color: #666; vertical-align: top;">Petunjuk Tugas</td>
+                <td style="white-space: pre-wrap; line-height: 1.5;">{{ $tugas->deskripsi }}</td>
+            </tr>
+        </table>
+    </div>
+
+    {{-- Jawaban / Bukti yang Dikumpulkan Peserta --}}
+    <div style="border: 1px solid #eadada; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+        <h3 style="margin-top: 0; color: #800020; font-size: 16px;">Hasil Pengerjaan dari Peserta</h3>
+
+        @if($pengumpulan && ($pengumpulan->link_jawaban || $pengumpulan->file_jawaban))
+            @if($pengumpulan->link_jawaban)
+                <div style="margin-bottom: 18px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px;">Tautan / Link Hasil Tugas:</label>
+                    <div style="background: #f0f4f8; padding: 12px 16px; border-radius: 6px; border: 1px solid #d0d7de;">
+                        🔗 <a href="{{ $pengumpulan->link_jawaban }}" target="_blank" style="color: #0969da; font-weight: bold; text-decoration: underline; word-break: break-all;">
+                            {{ $pengumpulan->link_jawaban }}
+                        </a>
+                    </div>
+                </div>
+            @endif
+
+            @if($pengumpulan->file_jawaban)
+                <div>
+                    <label style="display: block; font-weight: bold; margin-bottom: 6px; font-size: 13px;">Lampiran Gambar / Bukti Screenshot:</label>
+                    <div style="text-align: center; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px dashed #ccc;">
+                        <a href="{{ asset($pengumpulan->file_jawaban) }}" target="_blank">
+                            <img src="{{ asset($pengumpulan->file_jawaban) }}" alt="Bukti Pengerjaan" style="max-width: 100%; max-height: 420px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        </a>
+                        <p style="margin: 8px 0 0; font-size: 12px; color: #666;">Klik gambar untuk melihat dalam ukuran penuh</p>
+                    </div>
+                </div>
+            @endif
+        @else
+            <div style="color: #888; font-style: italic; padding: 10px 0;">
+                Peserta belum mengumpulkan link maupun gambar tugas.
+            </div>
+        @endif
+    </div>
+
+    {{-- Form Persetujuan Penilaian Admin --}}
+    <form action="{{ route('admin.tugas.simpanNilai', ['tugas' => $tugas->id, 'peserta' => $peserta->id]) }}" method="POST" style="background: #fff9f9; border: 2px solid #800020; border-radius: 8px; padding: 22px;">
+        @csrf
+
+        <h3 style="margin-top: 0; color: #800020; font-size: 17px;">Hak Persetujuan & Penilaian Admin / Asesor</h3>
+
+        <div style="margin-bottom: 18px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 8px;">Keputusan Penilaian: *</label>
+            <div style="display: flex; gap: 25px; flex-wrap: wrap;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; color: #0f5132;">
+                    <input type="radio" name="status" value="Kompeten" @checked(old('status', $pengumpulan?->status) === 'Kompeten') required style="width: 18px; height: 18px;">
+                    <span style="background: #d1e7dd; padding: 6px 14px; border-radius: 20px;">✓ KOMPETEN (K)</span>
+                </label>
+
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; color: #842029;">
+                    <input type="radio" name="status" value="Belum Kompeten" @checked(old('status', $pengumpulan?->status) === 'Belum Kompeten') required style="width: 18px; height: 18px;">
+                    <span style="background: #f8d7da; padding: 6px 14px; border-radius: 20px;">✗ BELUM KOMPETEN (BK)</span>
+                </label>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label for="catatan_admin" style="display: block; font-weight: bold; margin-bottom: 6px;">Catatan / Masukan Evaluasi dari Asesor:</label>
+            <textarea
+                id="catatan_admin"
+                name="catatan_admin"
+                rows="4"
+                placeholder="Catatan rekomendasi atau catatan perbaikan jika peserta belum kompeten..."
+                style="width: 100%; padding: 11px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; font-family: inherit; box-sizing: border-box;"
+            >{{ old('catatan_admin', $pengumpulan?->catatan_admin) }}</textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ route('admin.tugas.penilaian', $tugas->id) }}" style="padding: 10px 18px; background: #e0e0e0; color: #333; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                Batal
+            </a>
+            <button type="submit" style="padding: 10px 24px; background: #800020; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                Simpan Penilaian
+            </button>
+        </div>
+    </form>
+</div>
+@endsection
